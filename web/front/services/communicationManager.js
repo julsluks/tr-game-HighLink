@@ -145,7 +145,12 @@ export async function checkStatsService() {
         },
     });
 
-    appStore.setStats(await response.text());
+    if (response.ok) {
+        const data = await response.json();
+        appStore.setStats(data.state);
+    } else {
+        return handleResponse(response);
+    }
 }
 
 export async function onOffStatsService() {

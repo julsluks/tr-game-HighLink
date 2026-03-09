@@ -1,9 +1,9 @@
 import express from "express";
 import { User } from "../models/index.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import path from 'node:path';
+import * as fs from 'node:fs';
 import { generateToken, verifyTokenMiddleware } from "../token.js";
 
 const router = express.Router();
@@ -19,6 +19,19 @@ const uploadDir = "uploads";
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
+
+const upload = multer({
+  dest: uploadDir,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images are allowed"));
+    }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 // Create User
 router.post("/", async (req, res) => {
