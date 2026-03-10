@@ -26,10 +26,10 @@
                     class="flex items-center p-2 text-gray-300 hover:bg-slate-800/50 rounded-lg transition-colors duration-300">
                     <span>How To Play</span>
                 </router-link>
-                <router-link to="/aboutUs"
+                <!-- <router-link to="/aboutUs"
                     class="flex items-center p-2 text-gray-300 hover:bg-slate-800/50 rounded-lg transition-colors duration-300">
                     <span>About Us</span>
-                </router-link>
+                </router-link> -->
                 <router-link to="/contact"
                     class="flex items-center p-2 text-gray-300 hover:bg-slate-800/50 rounded-lg transition-colors duration-300">
                     <span>Contact</span>
@@ -59,9 +59,9 @@
                     <router-link to="/howToPlay" class="text-white hover:text-gray-300 transition-colors duration-300">
                         How To Play
                     </router-link>
-                    <router-link to="/aboutUs" class="text-white hover:text-gray-300 transition-colors duration-300">
+                    <!-- <router-link to="/aboutUs" class="text-white hover:text-gray-300 transition-colors duration-300">
                         About Us
-                    </router-link>
+                    </router-link> -->
                     <router-link to="/contact" class="text-white hover:text-gray-300 transition-colors duration-300">
                         Contact
                     </router-link>

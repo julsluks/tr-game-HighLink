@@ -1,5 +1,28 @@
 <template>
     <div id="admin-app" class="flex min-h-screen text-white bg-gradient-to-br from-slate-800 to-slate-900">
+        <!-- Error Notification Toast -->
+        <Transition
+            enter-active-class="transition ease-in-out duration-300 transform"
+            enter-from-class="opacity-0 translate-y-2"
+            enter-to-class="opacity-100 translate-y-0"
+            leave-active-class="transition ease-in-out duration-300 transform"
+            leave-from-class="opacity-100 translate-y-0"
+            leave-to-class="opacity-0 translate-y-2">
+            <div v-if="errorMessage" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+                <div class="bg-gradient-to-r from-red-500/90 to-pink-500/90 backdrop-blur-sm px-6 py-4 rounded-lg shadow-2xl border border-red-400/30 flex items-center gap-3">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="font-medium">{{ errorMessage }}</span>
+                    <button @click="errorMessage = ''" class="ml-4 text-white/80 hover:text-white">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </Transition>
+
         <!-- Show login form if not logged in -->
         <div v-if="!isLoggedIn" class="flex items-center justify-center w-full p-4">
             <div class="bg-white/10 backdrop-blur-sm rounded-lg shadow-lg p-6 sm:p-8 max-w-md w-full animate-fade-in">
@@ -136,6 +159,9 @@ const loginForm = ref({
     password: '',
 });
 
+// Error notification state
+const errorMessage = ref('');
+
 // Simulate login function
 const login = async () => {
     try {
@@ -143,7 +169,10 @@ const login = async () => {
 
         // Check if the user is an admin
         if (!user.admin) {
-            alert('You do not have permission to access the admin panel.');
+            errorMessage.value = 'You do not have permission to access the admin panel.';
+            setTimeout(() => {
+                errorMessage.value = '';
+            }, 5000);
             return; // Stop further execution
         }
 
@@ -155,7 +184,10 @@ const login = async () => {
 
         console.log('Logged in successfully');
     } catch (error) {
-        alert('Invalid email or password');
+        errorMessage.value = 'Invalid email or password';
+        setTimeout(() => {
+            errorMessage.value = '';
+        }, 5000);
     }
 };
 
@@ -207,6 +239,23 @@ onMounted(() => {
     from {
         opacity: 0;
         transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Slide down animation for error toast */
+.animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
     }
 
     to {

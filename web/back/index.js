@@ -90,6 +90,8 @@ try {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  startProcess(statsService);
+  statsService.state = "running";
 } catch (error) {
   console.error("Unable to connect to the database:", error);
 }
