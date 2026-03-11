@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import path from 'path';
+import path from 'node:path';
 
 dotenv.config();
 
@@ -39,8 +39,8 @@ app.post("/", async (req, res) => {
             return res.status(400).json({ error: "Missing required query parameters: game_id and height" });
         }
 
-        const parsedGameId = parseInt(game_id, 10);
-        const parsedHeight = parseFloat(height, 10);
+        const parsedGameId = Number.parseInt(game_id, 10);
+        const parsedHeight = Number.parseFloat(height, 10);
 
         const stat = new Stat({ game_id: parsedGameId, height: parsedHeight });
         await stat.save();
@@ -58,7 +58,7 @@ app.get("/:id", async (req, res) => {
     console.log(`${process.env.NODE_PYTHON_URI}/run-script/${req.params.id}`);
 
     try {
-        const gameId = parseInt(req.params.id, 10);
+        const gameId = Number.parseInt(req.params.id, 10);
         
         // Check if the game ID exists in the database
         const gameExists = await Stat.findOne({ game_id: gameId });

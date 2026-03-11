@@ -195,7 +195,6 @@ export async function fetchStats(id) {
 }
 
 export async function fetchConfig() {
-    const appStore = useAppStore();
     const response = await fetch(`${BACKEND_URL}/api/config`, {
         method: 'GET',
         headers: {
