@@ -34,8 +34,24 @@
         </div>
 
         <!-- Error Message -->
-        <div v-if="error" class="mt-8 text-center text-red-500 text-lg">
-            {{ error }}
+        <div v-if="error" class="mt-8 max-w-2xl mx-auto">
+            <div class="bg-red-500/20 border-2 border-red-500 rounded-lg p-6 sm:p-8 shadow-lg backdrop-blur-sm">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-red-400 mb-1">
+                            Error
+                        </h3>
+                        <p class="text-red-300">
+                            {{ error }}
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -81,9 +97,12 @@ const searchGame = async () => {
             name: `Game ${response.case_id}`
         };
         error.value = '';
+    } else if (response.statusCode === 404) {
+        game.value = null;
+        error.value = 'Game does not exist';
     } else {
         game.value = null;
-        error.value = 'Failed to fetch game stats. Please try again.';
+        error.value = response.error || 'Failed to fetch game stats. Please try again.';
     }
 };
 

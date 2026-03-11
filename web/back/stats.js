@@ -58,6 +58,15 @@ app.get("/:id", async (req, res) => {
     console.log(`${process.env.NODE_PYTHON_URI}/run-script/${req.params.id}`);
 
     try {
+        const gameId = parseInt(req.params.id, 10);
+        
+        // Check if the game ID exists in the database
+        const gameExists = await Stat.findOne({ game_id: gameId });
+        
+        if (!gameExists) {
+            return res.status(404).json({ error: "Game does not exist" });
+        }
+
         console.log(`${process.env.NODE_PYTHON_URI}/run-script/${req.params.id}`);
 
         const response = await fetch(`${process.env.NODE_PYTHON_URI}/run-script/${req.params.id}`, {

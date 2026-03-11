@@ -179,10 +179,19 @@ export async function fetchStats(id) {
     });
 
     if (!response.ok) {
-        throw new Error('Failed to fetch stats');
+        const error = await response.json();
+        return {
+            status: 'error',
+            statusCode: response.status,
+            error: error.error || 'Failed to fetch stats'
+        };
     }
 
-    return response.json();
+    const data = await response.json();
+    return {
+        status: 'success',
+        ...data
+    };
 }
 
 export async function fetchConfig() {
