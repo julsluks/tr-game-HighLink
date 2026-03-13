@@ -29,8 +29,8 @@
 ¡El ascenso comienza ahora! 🚀  
 
 ## Desarrolladores
-- **Arnau Fernández** - *Diseño de niveles y mecánicas* - [@ArnauFernández](https://github.com/Arnau-fg)
-- **Julie Villegas** - *Programación y animación* - [@JulieVillegas](https://www.linkedin.com/in/julievillegas77/)
+- **Arnau Fernández** - [@ArnauFernández](https://github.com/Arnau-fg)
+- **Julie Villegas** - [@JulieVillegas](https://www.linkedin.com/in/julievillegas77/)
 
 ## Estado de el Proyecto:
 * Comenzando la fase de diseño y prototipado.
