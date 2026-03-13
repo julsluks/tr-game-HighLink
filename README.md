@@ -31,9 +31,3 @@
 ## Desarrolladores
 - **Arnau Fernández** - [@ArnauFernández](https://github.com/Arnau-fg)
 - **Julie Villegas** - [@JulieVillegas](https://www.linkedin.com/in/julievillegas77/)
-
-## Estado de el Proyecto:
-* Comenzando la fase de diseño y prototipado.
-
-## Gestor de tareas:
-* [Taiga: Backlog](https://tree.taiga.io/project/julsluks-tr3-g6/backlog)
