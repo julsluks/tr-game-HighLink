@@ -2328,11 +2328,13 @@ MonoBehaviour:
   passwordInputField: {fileID: 1864307072}
   loginButton: {fileID: 1915940168}
   feedbackText: {fileID: 174930048}
+  goToRegisterButton: {fileID: 0}
+  serverSettings: {fileID: 11400000, guid: b2ac450773c485e43abdfc12f645934b, type: 2}
+  successScene: MainScene
+  registerScene: RegisterScene
   errorColor: {r: 1, g: 0, b: 0, a: 1}
   successColor: {r: 0, g: 1, b: 0, a: 1}
-  loginEndpoint: http://localhost:4000/api/users/login
-  successScene: MainMenu
-  sceneChangeDelay: 3
+  signingInColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &1744751088
 GameObject:
   m_ObjectHideFlags: 0

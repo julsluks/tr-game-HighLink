@@ -1651,7 +1651,7 @@ MonoBehaviour:
   feedbackText: {fileID: 2034614085}
   errorColor: {r: 1, g: 0, b: 0, a: 1}
   successColor: {r: 0, g: 1, b: 0, a: 1}
-  registerEndpoint: http://localhost:4000/api/users
+  serverSettings: {fileID: 11400000, guid: b2ac450773c485e43abdfc12f645934b, type: 2}
 --- !u!4 &552515408
 Transform:
   m_ObjectHideFlags: 0

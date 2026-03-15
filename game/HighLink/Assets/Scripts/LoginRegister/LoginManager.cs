@@ -16,9 +16,19 @@ public class LoginManager : MonoBehaviour
     [SerializeField] private Button goToRegisterButton;
 
     [Header("Settings")]
-    [SerializeField] private string loginEndpoint = "http://localhost:4000/api/users/login";
+    [SerializeField] private ServerConfig serverSettings;
     [SerializeField] private string successScene = "MainScene";
     [SerializeField] private string registerScene = "RegisterScene";
+
+    [Header("Colors")]
+    [SerializeField] private Color errorColor = Color.red;
+    [SerializeField] private Color successColor = Color.green;
+    [SerializeField] private Color signingInColor = Color.yellow;
+
+    private string searchLoginURL ()
+    {
+        return serverSettings.loginURL;
+    }
 
     private void Start()
     {
@@ -31,6 +41,13 @@ public class LoginManager : MonoBehaviour
             {
                 SceneManager.LoadScene(registerScene);
             });
+        }
+
+        // Asegurar que UserDataHolder existe
+        if (UserDataHolder.Instance == null)
+        {
+            GameObject userDataHolder = new GameObject("UserDataHolder");
+            userDataHolder.AddComponent<UserDataHolder>();
         }
     }
 
@@ -49,19 +66,19 @@ public class LoginManager : MonoBehaviour
     {
         if (string.IsNullOrEmpty(email))
         {
-            ShowFeedback("Email cannot be empty", Color.red);
+            ShowFeedback("Email cannot be empty", errorColor);
             return false;
         }
 
         if (!IsValidEmail(email))
         {
-            ShowFeedback("Invalid email format", Color.red);
+            ShowFeedback("Invalid email format", errorColor);
             return false;
         }
 
         if (string.IsNullOrEmpty(password))
         {
-            ShowFeedback("Password cannot be empty", Color.red);
+            ShowFeedback("Password cannot be empty", errorColor);
             return false;
         }
 
@@ -70,8 +87,11 @@ public class LoginManager : MonoBehaviour
 
     private IEnumerator LoginUser(string email, string password)
     {
+        string loginURL = searchLoginURL();
+
         loginButton.interactable = false;
-        ShowFeedback("Signing in...", Color.yellow);
+        ShowFeedback("Signing in...", signingInColor);
+        StartCoroutine(HideFeedbackAfterDelay(5f));
 
         UserLoginData loginData = new UserLoginData
         {
@@ -80,36 +100,70 @@ public class LoginManager : MonoBehaviour
         };
 
         string jsonData = JsonUtility.ToJson(loginData);
+        Debug.Log($"[LOGIN] Sending request to: {loginURL}");
+        Debug.Log($"[LOGIN] Credentials: {jsonData}");
 
-        using (UnityWebRequest request = new UnityWebRequest(loginEndpoint, "POST"))
+        UnityWebRequest request = new UnityWebRequest(loginURL, "POST");
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+
+        bool loginSuccess = false;
+        string userName = "";
+
+        if (request.result == UnityWebRequest.Result.Success)
         {
-            byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
+            string responseText = request.downloadHandler.text;
+            Debug.Log($"[LOGIN] Server response: {responseText}");
 
-            yield return request.SendWebRequest();
-
-            if (request.result == UnityWebRequest.Result.Success)
+            try
             {
-                LoginResponse response = JsonUtility.FromJson<LoginResponse>(request.downloadHandler.text);
-                
+                LoginResponse response = JsonUtility.FromJson<LoginResponse>(responseText);
+
                 if (response != null && response.user != null && !string.IsNullOrEmpty(response.token))
                 {
                     UserDataHolder.Instance.SetUserData(response.user, response.token);
-                    ShowFeedback($"Welcome {response.user.name}!", Color.green);
-                    yield return new WaitForSeconds(1f); // Pequeña pausa
-                    SceneManager.LoadScene(successScene);
+                    
+                    Debug.Log($"[LOGIN] User logged in successfully: {response.user.email}");
+                    loginSuccess = true;
+                    userName = response.user.name;
                 }
                 else
                 {
-                    ShowFeedback("Invalid server response", Color.red);
+                    string errorMsg = "Server returned invalid response";
+                    Debug.LogError($"[LOGIN] {errorMsg}");
+                    ShowFeedback($"Error: {errorMsg}", errorColor);
+                    StartCoroutine(HideFeedbackAfterDelay(5f));
                 }
             }
-            else
+            catch (System.Exception ex)
             {
-                ShowFeedback(GetErrorMessage(request), Color.red);
+                Debug.LogError($"[LOGIN] Error parsing response: {ex.Message}");
+                Debug.LogError($"[LOGIN] Response was: {responseText}");
+                ShowFeedback($"Error: Invalid server response", errorColor);
+                StartCoroutine(HideFeedbackAfterDelay(5f));
             }
+        }
+        else
+        {
+            string errorMsg = GetErrorMessage(request);
+            Debug.LogError($"[LOGIN] {errorMsg}");
+            ShowFeedback(errorMsg, errorColor);
+            StartCoroutine(HideFeedbackAfterDelay(5f));
+        }
+
+        request.Dispose();
+
+        // Si login fue exitoso, cambiar de escena después de esperar
+        if (loginSuccess)
+        {
+            ShowFeedback($"Welcome {userName}!", successColor);
+            StartCoroutine(HideFeedbackAfterDelay(5f));
+            yield return new WaitForSeconds(1f);
+            SceneManager.LoadScene(successScene);
         }
 
         loginButton.interactable = true;
@@ -143,11 +197,11 @@ public class LoginManager : MonoBehaviour
         feedbackText.text = message;
         feedbackText.color = color;
         feedbackText.gameObject.SetActive(true);
-        Invoke(nameof(HideFeedback), 3f);
     }
 
-    private void HideFeedback()
+    private IEnumerator HideFeedbackAfterDelay(float delay)
     {
+        yield return new WaitForSeconds(delay);
         feedbackText.gameObject.SetActive(false);
     }
 

@@ -24,7 +24,12 @@ public class RegisterManager : MonoBehaviour
 
     // URL of your registration endpoint on the server
     [Header("Server Settings")]
-    [SerializeField] private string registerEndpoint = "http://localhost:4000/api/users";
+    [SerializeField] private ServerConfig serverSettings;
+
+    private string searchRegisterURL ()
+    {
+        return serverSettings.registerURL;
+    }
 
     private void Start()
     {
@@ -108,6 +113,8 @@ public class RegisterManager : MonoBehaviour
 
     private IEnumerator RegisterUser(string nameCli, string email, string password)
     {
+        string registerURL = searchRegisterURL();
+
         registerButton.interactable = false;
         ShowFeedback("Registering...", Color.yellow);
         StartCoroutine(HideFeedbackAfterDelay(7f));
@@ -123,7 +130,7 @@ public class RegisterManager : MonoBehaviour
         string jsonData = JsonUtility.ToJson(userData);
 
         // Create the request
-        UnityWebRequest request = new UnityWebRequest(registerEndpoint, "POST");
+        UnityWebRequest request = new UnityWebRequest(registerURL, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
