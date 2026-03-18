@@ -3,23 +3,38 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using System.Runtime.Serialization;
 
 public class GameController : MonoBehaviour
 {
     public static GameController Instance { get; private set; }
-
-    private string ServerUri = "https://highlink.dam.inspedralbes.cat/back";
-    private string StatsAPIUri = "https://highlink.dam.inspedralbes.cat/back/stats";
-    private string GameAPIUri = "/api/games";
-    private string CheckStatsUri = "/state-stats";
-
+    [SerializeField] private ServerConfig serverSettings;
+    // // private string ServerUri = "https://highlink.dam.inspedralbes.cat/back";
+    // private string ServerUri = "http://localhost:4000";
+    // // private string StatsAPIUri = "https://highlink.dam.inspedralbes.cat/back/stats";
+    // private string StatsAPIUri = "http://localhost:4001";
+    // private string GameAPIUri = "/api/games";
+    // private string CheckStatsUri = "/state-stats";
     private bool ServerOnline = false;
     private bool StatsOnline = false;
-
     private float heightToShow = 0f;
     private int GameId;
     [SerializeField] private TMP_Text gameIdText;
 
+    private string searchGameURL()
+    {
+        return serverSettings.gameURL;
+    }
+
+    private string searchCheckStatsURL()
+    {
+        return serverSettings.checkStatsURL;
+    }
+
+    private string searchStatsApiURL()
+    {
+        return serverSettings.statsAPIURL;
+    }
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,7 +59,10 @@ public class GameController : MonoBehaviour
     }
 
     IEnumerator CreateGame() {
-        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(ServerUri + GameAPIUri, "")) {
+        // GameURL
+        string gameURL = searchGameURL();
+
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(gameURL, "")) {
             yield return req.SendWebRequest();
 
             if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
@@ -64,7 +82,10 @@ public class GameController : MonoBehaviour
     }
 
     IEnumerator CheckStats() {
-        using (UnityWebRequest req = UnityWebRequest.Get(ServerUri + CheckStatsUri)) {
+        // CheckStatsURL
+        string checkStatsURL = searchCheckStatsURL();
+
+        using (UnityWebRequest req = UnityWebRequest.Get(checkStatsURL)) {
             yield return req.SendWebRequest();
 
             if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
@@ -87,6 +108,9 @@ public class GameController : MonoBehaviour
     }
 
     IEnumerator SendStats() {
+        // StatsURL
+        string statsApiURL = searchStatsApiURL();
+
         if (!(ServerOnline && StatsOnline)) {
             Debug.Log("Server or Stats service is offline");
             yield break;
@@ -99,7 +123,7 @@ public class GameController : MonoBehaviour
         string jsonString = JsonUtility.ToJson(jsonData);
 
 
-        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(StatsAPIUri + $"?game_id={GameId}&height={Mathf.Round(heightToShow * 100f) / 100f}", "POST")) {
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(statsApiURL + $"?game_id={GameId}&height={Mathf.Round(heightToShow * 100f) / 100f}", "POST")) {
             yield return req.SendWebRequest();
             if (req.result == UnityWebRequest.Result.ConnectionError || req.result == UnityWebRequest.Result.ProtocolError) {
                 Debug.LogError(req.error);

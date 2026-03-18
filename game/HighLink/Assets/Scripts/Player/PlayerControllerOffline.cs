@@ -12,7 +12,7 @@ public class PlayerControllerOffline : MonoBehaviour
     private Animator anim;
     public bool grounded;
     // [SerializeField] private float charSize = 0.03f;
-    
+
 
     private HashSet<Collider2D> groundContacts = new HashSet<Collider2D>();
 
@@ -24,21 +24,27 @@ public class PlayerControllerOffline : MonoBehaviour
     public KeyCode RightKey = KeyCode.RightArrow; // public KeyCode RightKey
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    void Awake() // Change from Start to Awake for components
+    {
+        body = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+    }
     void Start()
     {
         body = GetComponent<Rigidbody2D>();
         body.linearVelocity = new Vector2(0, 0);
         body.gravityScale = 1;
-        body.freezeRotation = true; 
+        body.freezeRotation = true;
 
-        jumpMultiplier = ConfigHelper.GetFloat("jumpHeight")> 0?ConfigHelper.GetFloat("jumpHeight") : jumpMultiplier;
+        jumpMultiplier = ConfigHelper.GetFloat("jumpHeight") > 0 ? ConfigHelper.GetFloat("jumpHeight") : jumpMultiplier;
         speed = ConfigHelper.GetFloat("speed") > 0 ? ConfigHelper.GetFloat("speed") : speed;
 
 
         anim = GetComponent<Animator>();
         grounded = true;
 
-        
+
     }
 
     void Update()
@@ -51,7 +57,7 @@ public class PlayerControllerOffline : MonoBehaviour
             anim.SetBool("Falling", true);  // Trigger fall animation
         }
 
-        if (body.linearVelocity.y >= -0.15f) 
+        if (body.linearVelocity.y >= -0.15f)
         {
             anim.SetBool("Falling", false);  // Stop fall animation
         }
@@ -66,10 +72,10 @@ public class PlayerControllerOffline : MonoBehaviour
     void FixedUpdate()
     {
         float moveHorizontal = 0f;
-        
+
         if (Input.GetKey(LeftKey))
         {
-            if(!grounded)
+            if (!grounded)
             {
                 moveHorizontal = airMoveModifier * -1f;
             }
@@ -80,7 +86,7 @@ public class PlayerControllerOffline : MonoBehaviour
         }
         if (Input.GetKey(RightKey))
         {
-            if(!grounded)
+            if (!grounded)
             {
                 moveHorizontal = airMoveModifier * 1f;
             }
@@ -94,11 +100,11 @@ public class PlayerControllerOffline : MonoBehaviour
         body.AddForce(new Vector2(moveHorizontal * speed * Time.deltaTime, 0), ForceMode2D.Impulse);
 
         // Flip the sprite
-        if(moveHorizontal > 0.01f)
+        if (moveHorizontal > 0.01f)
         {
             this.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
         }
-        else if(moveHorizontal < -0.01f)
+        else if (moveHorizontal < -0.01f)
         {
             this.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
         }
@@ -110,9 +116,9 @@ public class PlayerControllerOffline : MonoBehaviour
         }
 
         anim.SetBool("Walking", moveHorizontal != 0);
-        
 
-        if(body.linearVelocity.magnitude > maxSpeed)
+
+        if (body.linearVelocity.magnitude > maxSpeed)
         {
             body.linearVelocity = Vector3.ClampMagnitude(body.linearVelocity, maxSpeed);
         }
@@ -120,12 +126,12 @@ public class PlayerControllerOffline : MonoBehaviour
 
     private void Jump()
     {
-        
+
         // body.linearVelocity = new Vector2(body.linearVelocity.x, speed * jumpMultiplier);
         body.AddForce(new Vector2(0, speed * jumpMultiplier), ForceMode2D.Impulse);
         anim.SetTrigger("Jump");
         AudioManager.Instance.Play(AudioManager.SoundType.Jump);
-        
+
         grounded = false;
 
     }
@@ -157,13 +163,13 @@ public class PlayerControllerOffline : MonoBehaviour
         return tag == "Grounded" || tag == "Grounded2" || tag == "Grounded3" || tag == "ground";
     }
 
-    void OnTriggerEnter2D (Collider2D other)
+    void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
             grounded = true;
         }
-        
-        
+
+
     }
 }
