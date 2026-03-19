@@ -9,12 +9,6 @@ public class GameController : MonoBehaviour
 {
     public static GameController Instance { get; private set; }
     [SerializeField] private ServerConfig serverSettings;
-    // // private string ServerUri = "https://highlink.dam.inspedralbes.cat/back";
-    // private string ServerUri = "http://localhost:4000";
-    // // private string StatsAPIUri = "https://highlink.dam.inspedralbes.cat/back/stats";
-    // private string StatsAPIUri = "http://localhost:4001";
-    // private string GameAPIUri = "/api/games";
-    // private string CheckStatsUri = "/state-stats";
     private bool ServerOnline = false;
     private bool StatsOnline = false;
     private float heightToShow = 0f;
