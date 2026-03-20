@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2686764132179716942}
   - component: {fileID: 7251904787790542486}
   - component: {fileID: 1908999797367764585}
+  - component: {fileID: 6882415182094069247}
   m_Layer: 0
   m_Name: Game Manager
   m_TagString: Untagged
@@ -47,7 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2583230650
+  GlobalObjectIdHash: 2266764354
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -104,3 +105,20 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   ropePrefab: {fileID: 4151172196187611714, guid: 44c746c6e03897f48adbd3a6ac16b610, type: 3}
   cameraPrefab: {fileID: 3072988608352889104, guid: 85a4fd2664d57c341b67950bc443de42, type: 3}
+  syncInterval: 0.1
+--- !u!114 &6882415182094069247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5951480495885152510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1331791aa1e716a4eaf8c749f99a6e6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  checkpointPrefab: {fileID: 3980916137460643932, guid: 25bab2af1a487f8419c81f421869ac2d, type: 3}
+  player1: {fileID: 0}
+  player2: {fileID: 0}
+  ropeCreator: {fileID: 0}

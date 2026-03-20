@@ -3,18 +3,39 @@ using Unity.Netcode;
 
 public class StartNetwork : MonoBehaviour
 {
+    [SerializeField] private GameObject menuUI;
+
     public void StartServer()
     {
-        NetworkManager.Singleton.StartServer();
+        if (NetworkManager.Singleton.StartServer())
+        {
+            HideUI();
+        }
     }
     
     public void StartClient()
     {
-        NetworkManager.Singleton.StartClient();
+        if (NetworkManager.Singleton.IsClient || NetworkManager.Singleton.IsServer) return;
+
+        if (NetworkManager.Singleton.StartClient())
+        {
+            HideUI();
+        }
     }
     
     public void StartHost()
     {
-        NetworkManager.Singleton.StartHost();
+        if (NetworkManager.Singleton.StartHost())
+        {
+            HideUI();
+        }
+    }
+
+    private void HideUI()
+    {
+        if (menuUI != null)
+        {
+            menuUI.SetActive(false); 
+        }
     }
 }

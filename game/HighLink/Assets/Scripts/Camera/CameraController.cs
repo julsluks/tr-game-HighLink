@@ -6,17 +6,20 @@ public class CameraFollowPlayers : MonoBehaviour
     public Transform player2; // Reference to Player 2
 
     [SerializeField] private float camModifier = 0.9f; // Camera modifier to adjust the position
-    
-    void Update() 
+
+    void Update()
     {
         if (player1 == null || player2 == null)
         {
             return;
         }
-        
+
         Vector3 midpoint = (player1.position + player2.position) * camModifier / 2f;
         transform.position = new Vector3(midpoint.x, midpoint.y, transform.position.z);
 
-        GameController.Instance.UpdatePosition(transform.position);
+        if (GameManagerController.Instance != null)
+        {
+            GameManagerController.Instance.UpdatePosition(transform.position);
+        }
     }
 }

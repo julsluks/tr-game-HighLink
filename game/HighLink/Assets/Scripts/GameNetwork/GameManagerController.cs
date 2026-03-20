@@ -1,105 +1,129 @@
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.Networking;
+using System.Collections;
+using TMPro;
 
 public class GameManagerController : NetworkBehaviour
 {
-
     public static GameManagerController Instance { get; private set; }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
 
-    // [SerializeField] private RopeController ropeControllerPrefab;
-    // private RopeController ropeController;
-    
-    private NetworkVariable<int> playersConnected = new NetworkVariable<int>(0);
-    private NetworkList<ulong> playerClientIds;
+    [Header("Configuración del Servidor")]
+    [SerializeField] private ServerConfig serverSettings;
+    [SerializeField] private TMP_Text gameIdText;
 
-    private void Awake() {
+    // Variables de estado
+    private NetworkVariable<int> networkGameId = new NetworkVariable<int>(-1);
+    private float heightToShow = 0f;
+    private bool statsOnline = false;
+
+    private void Awake()
+    {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
-
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        
-        playerClientIds = new NetworkList<ulong>();
     }
-
 
     public override void OnNetworkSpawn()
     {
-        if (IsHost)
+        // Solo el Host se encarga de la base de datos y estadísticas
+        if (IsServer)
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            StartCoroutine(CreateGameOnServer());
         }
-    }
 
-    private void OnClientConnected(ulong clientId)
-    {
-        if (!IsHost) return;
-        
-        playersConnected.Value++;
-        playerClientIds.Add(clientId);
-        
-        if (playersConnected.Value == 2)
-        {
-            SpawnRope();
-        }
-    }
-
-    private void OnClientDisconnected(ulong clientId)
-    {
-        if (!IsHost) return;
-        
-        playersConnected.Value--;
-        playerClientIds.Remove(clientId);
-        
-        // if (ropeController != null)
-        // {
-        //     DestroyRope();
-        // }
-    }
-
-    private void SpawnRope()
-    {
-        if (!IsHost) return;
-        
-        // Find both players (host and client)
-        NetworkObject[] players = FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-        Transform hostPlayer = null;
-        Transform clientPlayer = null;
-        
-        foreach (var player in players)
-        {
-            if (player.IsPlayerObject)
+        // Todos (Host y Cliente) actualizan su UI cuando el ID cambia
+        networkGameId.OnValueChanged += (oldValue, newValue) => {
+            if (gameIdText != null)
             {
-                if (player.OwnerClientId == NetworkManager.ServerClientId)
-                    hostPlayer = player.transform;
-                else
-                    clientPlayer = player.transform;
+                gameIdText.text = "Game ID: " + newValue;
+            }
+        };
+    }
+
+    // --- LÓGICA DE SERVIDOR / ESTADÍSTICAS ---
+
+    IEnumerator CreateGameOnServer()
+    {
+        if (serverSettings == null) yield break;
+
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, ""))
+        {
+            yield return req.SendWebRequest();
+
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                var data = JsonUtility.FromJson<NetworkGameData>(req.downloadHandler.text);
+                networkGameId.Value = data.id;
+                
+                StartCoroutine(CheckStatsService());
+            }
+            else
+            {
+                Debug.LogError("Error creando juego: " + req.error);
             }
         }
-        
-        if (hostPlayer != null && clientPlayer != null)
+    }
+
+    IEnumerator CheckStatsService()
+    {
+        using (UnityWebRequest req = UnityWebRequest.Get(serverSettings.checkStatsURL))
         {
-            // // Spawn the rope controller on network
-            // ropeController = Instantiate(ropeControllerPrefab);
-            // ropeController.GetComponent<NetworkObject>().SpawnWithOwnership(NetworkManager.ServerClientId);
-            
-            // // Initialize the rope between players
-            // ropeController.InitializeRope(hostPlayer, clientPlayer);
+            yield return req.SendWebRequest();
+            if (req.result == UnityWebRequest.Result.Success)
+            {
+                var stats = JsonUtility.FromJson<NetworkStatsStatus>(req.downloadHandler.text);
+                if (stats.state == "running")
+                {
+                    statsOnline = true;
+                    InvokeRepeating(nameof(SendStatsTick), 1f, 2.5f);
+                }
+            }
         }
     }
 
-    private void DestroyRope()
+    private void SendStatsTick()
     {
-        // if (ropeController != null)
-        // {
-        //     ropeController.GetComponent<NetworkObject>().Despawn();
-        //     Destroy(ropeController.gameObject);
-        //     ropeController = null;
-        // }
+        if (statsOnline && networkGameId.Value != -1)
+        {
+            StartCoroutine(SendStatsCoroutine());
+        }
+    }
+
+    IEnumerator SendStatsCoroutine()
+    {
+        string url = serverSettings.statsAPIURL + $"?game_id={networkGameId.Value}&height={heightToShow}";
+        
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(url, "POST"))
+        {
+            yield return req.SendWebRequest();
+            if (req.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning("Error enviando stats: " + req.error);
+            }
+        }
+    }
+
+    public void UpdatePosition(Vector3 newPosition)
+    {
+        if (!IsServer) return;
+
+        heightToShow = Mathf.Round((newPosition.y + 1.012f) * 10 * 100f) / 100f;
+
+        if (HeightController.Instance != null)
+        {
+            HeightController.Instance.UpdateHeight(heightToShow);
+        }
     }
 }
+
+// DEFINICIONES NECESARIAS PARA QUE EL SCRIPT COMPILE
+[System.Serializable]
+public class NetworkGameData { public int id; }
+
+[System.Serializable]
+public class NetworkStatsStatus { public string state; }
