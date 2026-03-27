@@ -8,122 +8,65 @@ public class GameManagerController : NetworkBehaviour
 {
     public static GameManagerController Instance { get; private set; }
 
-    [Header("Configuración del Servidor")]
+    [Header("Configuración")]
     [SerializeField] private ServerConfig serverSettings;
     [SerializeField] private TMP_Text gameIdText;
+    [SerializeField] private GameObject menuPanel; // AQUÍ ARRASTRA SOLO EL PANEL DE BOTONES
 
-    // Variables de estado
     private NetworkVariable<int> networkGameId = new NetworkVariable<int>(-1);
-    private float heightToShow = 0f;
-    private bool statsOnline = false;
+    private NetworkVariable<float> networkHeight = new NetworkVariable<float>(0f);
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
     public override void OnNetworkSpawn()
     {
-        // Solo el Host se encarga de la base de datos y estadísticas
-        if (IsServer)
+        networkGameId.OnValueChanged += (oldV, newV) =>
         {
-            StartCoroutine(CreateGameOnServer());
-        }
-
-        // Todos (Host y Cliente) actualizan su UI cuando el ID cambia
-        networkGameId.OnValueChanged += (oldValue, newValue) => {
-            if (gameIdText != null)
-            {
-                gameIdText.text = "Game ID: " + newValue;
-            }
+            if (gameIdText != null) gameIdText.text = "Game ID: " + newV;
         };
+
+        networkHeight.OnValueChanged += (oldV, newV) =>
+        {
+            if (HeightController.Instance != null)
+                HeightController.Instance.UpdateHeight(newV);
+        };
+
+        if (IsServer) StartCoroutine(CreateGameOnServer());
     }
 
-    // --- LÓGICA DE SERVIDOR / ESTADÍSTICAS ---
+    public void StartHostWithUI()
+    {
+        if (menuPanel != null) menuPanel.SetActive(false); // Solo oculta botones
+        NetworkManager.Singleton.StartHost();
+    }
+
+    public void StartClientWithUI()
+    {
+        if (menuPanel != null) menuPanel.SetActive(false); // Solo oculta botones
+        NetworkManager.Singleton.StartClient();
+    }
 
     IEnumerator CreateGameOnServer()
     {
         if (serverSettings == null) yield break;
-
         using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, ""))
         {
             yield return req.SendWebRequest();
-
             if (req.result == UnityWebRequest.Result.Success)
             {
                 var data = JsonUtility.FromJson<NetworkGameData>(req.downloadHandler.text);
                 networkGameId.Value = data.id;
-                
-                StartCoroutine(CheckStatsService());
-            }
-            else
-            {
-                Debug.LogError("Error creando juego: " + req.error);
             }
         }
     }
 
-    IEnumerator CheckStatsService()
-    {
-        using (UnityWebRequest req = UnityWebRequest.Get(serverSettings.checkStatsURL))
-        {
-            yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success)
-            {
-                var stats = JsonUtility.FromJson<NetworkStatsStatus>(req.downloadHandler.text);
-                if (stats.state == "running")
-                {
-                    statsOnline = true;
-                    InvokeRepeating(nameof(SendStatsTick), 1f, 2.5f);
-                }
-            }
-        }
-    }
-
-    private void SendStatsTick()
-    {
-        if (statsOnline && networkGameId.Value != -1)
-        {
-            StartCoroutine(SendStatsCoroutine());
-        }
-    }
-
-    IEnumerator SendStatsCoroutine()
-    {
-        string url = serverSettings.statsAPIURL + $"?game_id={networkGameId.Value}&height={heightToShow}";
-        
-        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(url, "POST"))
-        {
-            yield return req.SendWebRequest();
-            if (req.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogWarning("Error enviando stats: " + req.error);
-            }
-        }
-    }
-
-    public void UpdatePosition(Vector3 newPosition)
+    public void UpdatePosition(Vector3 pos)
     {
         if (!IsServer) return;
-
-        heightToShow = Mathf.Round((newPosition.y + 1.012f) * 10 * 100f) / 100f;
-
-        if (HeightController.Instance != null)
-        {
-            HeightController.Instance.UpdateHeight(heightToShow);
-        }
+        networkHeight.Value = Mathf.Round((pos.y + 1.012f) * 10 * 100f) / 100f;
     }
 }
-
-// DEFINICIONES NECESARIAS PARA QUE EL SCRIPT COMPILE
-[System.Serializable]
-public class NetworkGameData { public int id; }
-
-[System.Serializable]
-public class NetworkStatsStatus { public string state; }
