@@ -11,26 +11,25 @@ public class GameManagerController : NetworkBehaviour
     [Header("Configuración")]
     [SerializeField] private ServerConfig serverSettings;
     [SerializeField] private TMP_Text gameIdText;
-    [SerializeField] private GameObject menuPanel; // AQUÍ ARRASTRA SOLO EL PANEL DE BOTONES
+    [SerializeField] private GameObject menuPanel; 
 
+    // Sincronización automática de red
     private NetworkVariable<int> networkGameId = new NetworkVariable<int>(-1);
     private NetworkVariable<float> networkHeight = new NetworkVariable<float>(0f);
 
-    private void Awake()
-    {
+    private void Awake() {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
-    public override void OnNetworkSpawn()
-    {
-        networkGameId.OnValueChanged += (oldV, newV) =>
-        {
-            if (gameIdText != null) gameIdText.text = "Game ID: " + newV;
-        };
+    public override void OnNetworkSpawn() {
+        // Ejecutar inmediatamente para el cliente que se acaba de unir
+        UpdateUI(networkGameId.Value);
 
-        networkHeight.OnValueChanged += (oldV, newV) =>
-        {
+        // Escuchar cambios futuros
+        networkGameId.OnValueChanged += (oldV, newV) => { UpdateUI(newV); };
+
+        networkHeight.OnValueChanged += (oldV, newV) => {
             if (HeightController.Instance != null)
                 HeightController.Instance.UpdateHeight(newV);
         };
@@ -38,35 +37,39 @@ public class GameManagerController : NetworkBehaviour
         if (IsServer) StartCoroutine(CreateGameOnServer());
     }
 
-    public void StartHostWithUI()
-    {
-        if (menuPanel != null) menuPanel.SetActive(false); // Solo oculta botones
+    private void UpdateUI(int id) {
+        if (gameIdText != null && id != -1) {
+            gameIdText.text = "Game ID: " + id;
+        }
+    }
+
+    public void StartHostWithUI() {
+        if (menuPanel != null) menuPanel.SetActive(false); 
         NetworkManager.Singleton.StartHost();
     }
 
-    public void StartClientWithUI()
-    {
-        if (menuPanel != null) menuPanel.SetActive(false); // Solo oculta botones
+    public void StartClientWithUI() {
+        if (menuPanel != null) menuPanel.SetActive(false); 
         NetworkManager.Singleton.StartClient();
     }
 
-    IEnumerator CreateGameOnServer()
-    {
+    IEnumerator CreateGameOnServer() {
         if (serverSettings == null) yield break;
-        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, ""))
-        {
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, "")) {
             yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success)
-            {
+            if (req.result == UnityWebRequest.Result.Success) {
                 var data = JsonUtility.FromJson<NetworkGameData>(req.downloadHandler.text);
                 networkGameId.Value = data.id;
             }
         }
     }
 
-    public void UpdatePosition(Vector3 pos)
-    {
+    public void UpdatePosition(Vector3 pos) {
         if (!IsServer) return;
+        // Solo el host calcula la altura y la envía a la red
         networkHeight.Value = Mathf.Round((pos.y + 1.012f) * 10 * 100f) / 100f;
     }
 }
+
+[System.Serializable]
+public class NetworkGameData { public int id; }
