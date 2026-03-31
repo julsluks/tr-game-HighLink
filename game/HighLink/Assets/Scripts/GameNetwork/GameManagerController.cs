@@ -8,68 +8,74 @@ public class GameManagerController : NetworkBehaviour
 {
     public static GameManagerController Instance { get; private set; }
 
-    [Header("Configuración")]
+    [Header("Configuración UI")]
     [SerializeField] private ServerConfig serverSettings;
     [SerializeField] private TMP_Text gameIdText;
-    [SerializeField] private GameObject menuPanel; 
+    [SerializeField] private TMP_Text heightText; 
+    [SerializeField] private GameObject menuPanel;
 
-    // Sincronización automática de red
     private NetworkVariable<int> networkGameId = new NetworkVariable<int>(-1);
     private NetworkVariable<float> networkHeight = new NetworkVariable<float>(0f);
 
-    private void Awake() {
+    private void Awake()
+    {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
-    public override void OnNetworkSpawn() {
-        // Ejecutar inmediatamente para el cliente que se acaba de unir
-        UpdateUI(networkGameId.Value);
+    public override void OnNetworkSpawn()
+    {
+        ActualizarTextoID(networkGameId.Value);
+        networkGameId.OnValueChanged += (oldV, newV) => { ActualizarTextoID(newV); };
 
-        // Escuchar cambios futuros
-        networkGameId.OnValueChanged += (oldV, newV) => { UpdateUI(newV); };
-
-        networkHeight.OnValueChanged += (oldV, newV) => {
-            if (HeightController.Instance != null)
-                HeightController.Instance.UpdateHeight(newV);
-        };
+        // Sincronizar Altura en todos los clientes
+        ActualizarTextoAltura(networkHeight.Value);
+        networkHeight.OnValueChanged += (oldV, newV) => { ActualizarTextoAltura(newV); };
 
         if (IsServer) StartCoroutine(CreateGameOnServer());
     }
 
-    private void UpdateUI(int id) {
-        if (gameIdText != null && id != -1) {
-            gameIdText.text = "Game ID: " + id;
-        }
+    private void ActualizarTextoID(int id)
+    {
+        if (gameIdText != null && id != -1) gameIdText.text = "Game ID: " + id;
     }
 
-    public void StartHostWithUI() {
-        if (menuPanel != null) menuPanel.SetActive(false); 
+    private void ActualizarTextoAltura(float h)
+    {
+        if (heightText != null) heightText.text = "Height: " + h.ToString("F2");
+    }
+
+    public void StartHostWithUI()
+    {
+        if (menuPanel != null) menuPanel.SetActive(false);
         NetworkManager.Singleton.StartHost();
     }
 
-    public void StartClientWithUI() {
-        if (menuPanel != null) menuPanel.SetActive(false); 
+    public void StartClientWithUI()
+    {
+        if (menuPanel != null) menuPanel.SetActive(false);
         NetworkManager.Singleton.StartClient();
     }
 
-    IEnumerator CreateGameOnServer() {
+    IEnumerator CreateGameOnServer()
+    {
         if (serverSettings == null) yield break;
-        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, "")) {
+        using (UnityWebRequest req = UnityWebRequest.PostWwwForm(serverSettings.gameURL, ""))
+        {
             yield return req.SendWebRequest();
-            if (req.result == UnityWebRequest.Result.Success) {
+            if (req.result == UnityWebRequest.Result.Success)
+            {
                 var data = JsonUtility.FromJson<NetworkGameData>(req.downloadHandler.text);
                 networkGameId.Value = data.id;
             }
         }
     }
 
-    public void UpdatePosition(Vector3 pos) {
+    public void UpdatePosition(Vector3 pos)
+    {
         if (!IsServer) return;
-        // Solo el host calcula la altura y la envía a la red
         networkHeight.Value = Mathf.Round((pos.y + 1.012f) * 10 * 100f) / 100f;
     }
 }
 
-[System.Serializable]
-public class NetworkGameData { public int id; }
+[System.Serializable] public class NetworkGameData { public int id; }
